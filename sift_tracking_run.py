@@ -5,7 +5,7 @@ import numpy as np
 import argparse
 
 NEW_SIZE_FACTOR = 0.4
-OBJ_DIM = (20, 20)
+OBJ_DIM = (15, 15)
 CROSSCHAIR_DIM = (15, 15)
 RED = (0,0,255)
 GREEN = (0,255,0)
@@ -80,7 +80,7 @@ if __name__ == "__main__":
 	img_patch = np.zeros(OBJ_DIM)
 	sift = cv2.xfeatures2d.SIFT_create()
 	FLANN_INDEX_KDTREE = 0 #for sift, surf etc
-	MIN_MATCH_COUNT = 5
+	MIN_MATCH_COUNT = 4
 	index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5) #for sift, surf etc
 	search_params = dict(checks = 50)
 	# Object of Fast Approximate Nearest Neighbor Search Library
@@ -152,111 +152,111 @@ if __name__ == "__main__":
 			key_img_patch = cv2.cvtColor(img_patch, cv2.COLOR_BGR2GRAY)
 			kp_roi, des_roi = sift.detectAndCompute(key_img_patch, None)
 			print(len(kp_roi))
-			# if len(kp_roi) < NUM_PARTICLES:
-			# 	particles_xy = np.array([[int(clicked_x), int(clicked_y)] for _ in range(NUM_PARTICLES-len(kp_roi))] + [p.pt for p in kp_roi])
-			# else:
-			# 	particles_xy = np.array([p.pt for p in kp_roi])
+			if len(kp_roi) < NUM_PARTICLES:
+				particles_xy = np.array([[int(clicked_x), int(clicked_y)] for _ in range(NUM_PARTICLES-len(kp_roi))] + [p.pt for p in kp_roi])
+			else:
+				particles_xy = np.array([p.pt for p in kp_roi])
 
 		elif (key == ord('d')) or (key == ord('D')):
 			captured = False
 			img_patch = np.zeros(img_patch.shape)
 		
 		if captured:
-			# # randomly sample particles
-			# for i, p in enumerate(particles_xy):
-			# 	if i == 0: 
-			# 		continue
-			# 	p[0] += np.random.normal(0, PARTICLE_SIGMA)
-			# 	p[1] += np.random.normal(0, PARTICLE_SIGMA)
+			# randomly sample particles
+			for i, p in enumerate(particles_xy):
+				if i == 0: 
+					continue
+				p[0] += np.random.normal(0, PARTICLE_SIGMA)
+				p[1] += np.random.normal(0, PARTICLE_SIGMA)
 
-			# 	# adjust for out of frame particles
-			# 	p[0] = OBJ_DIM[1]//2 if p[0] < OBJ_DIM[1]//2 else p[0]
-			# 	p[0] = img_w - OBJ_DIM[1]//2 if p[0] > img_w - OBJ_DIM[1]//2 else p[0]
-			# 	p[1] = OBJ_DIM[0]//2 if p[1] < OBJ_DIM[0]//2 else p[1]
-			# 	p[1] = img_h - OBJ_DIM[0]//2 if p[1] > img_h - OBJ_DIM[0]//2 else p[1]
+				# adjust for out of frame particles
+				p[0] = OBJ_DIM[1]//2 if p[0] < OBJ_DIM[1]//2 else p[0]
+				p[0] = img_w - OBJ_DIM[1]//2 if p[0] > img_w - OBJ_DIM[1]//2 else p[0]
+				p[1] = OBJ_DIM[0]//2 if p[1] < OBJ_DIM[0]//2 else p[1]
+				p[1] = img_h - OBJ_DIM[0]//2 if p[1] > img_h - OBJ_DIM[0]//2 else p[1]
 
-			# # display particles
-			# for p in particles_xy:
-			# 	img_color = cv2.circle(img_color, (int(p[0]), int(p[1])), 1, GREEN, -1)
+			# display particles
+			for p in particles_xy:
+				img_color = cv2.circle(img_color, (int(p[0]), int(p[1])), 1, GREEN, -1)
 
-			# # get patches for each particle
-			# particles_patches = []
-			# for p in particles_xy:
-			# 	patch_top_left_x = int(p[0] - OBJ_DIM[1]//2)
-			# 	patch_top_left_y = int(p[1] - OBJ_DIM[0]//2)
-			# 	patch_bot_right_x = int(p[0] + OBJ_DIM[1]//2)
-			# 	patch_bot_right_y = int(p[1] + OBJ_DIM[0]//2)
-			# 	temp_patch = img_color_clean[patch_top_left_y:patch_bot_right_y, patch_top_left_x:patch_bot_right_x]
-			# 	particles_patches.append(temp_patch)
+			# get patches for each particle
+			particles_patches = []
+			for p in particles_xy:
+				patch_top_left_x = int(p[0] - OBJ_DIM[1]//2)
+				patch_top_left_y = int(p[1] - OBJ_DIM[0]//2)
+				patch_bot_right_x = int(p[0] + OBJ_DIM[1]//2)
+				patch_bot_right_y = int(p[1] + OBJ_DIM[0]//2)
+				temp_patch = img_color_clean[patch_top_left_y:patch_bot_right_y, patch_top_left_x:patch_bot_right_x]
+				particles_patches.append(temp_patch)
 				
-			# # compare each patch with the model patch
-			# model_patch = cv2.cvtColor(img_patch, cv2.COLOR_BGR2GRAY)
-			# model_patch = cv2.GaussianBlur(model_patch, (3,3), 0)
-			# particles_scores = []
-			# for p in particles_patches:
-			# 	temp_patch = cv2.cvtColor(p, cv2.COLOR_BGR2GRAY)
-			# 	temp_patch = cv2.GaussianBlur(temp_patch, (3,3), 0)
-			# 	mse = np.mean((model_patch - temp_patch)**2)
-			# 	particles_scores.append(mse)
+			# compare each patch with the model patch
+			model_patch = cv2.cvtColor(img_patch, cv2.COLOR_BGR2GRAY)
+			model_patch = cv2.GaussianBlur(model_patch, (3,3), 0)
+			particles_scores = []
+			for p in particles_patches:
+				temp_patch = cv2.cvtColor(p, cv2.COLOR_BGR2GRAY)
+				temp_patch = cv2.GaussianBlur(temp_patch, (3,3), 0)
+				mse = np.mean((model_patch - temp_patch)**2)
+				particles_scores.append(mse)
 				
-			# # convert to Gaussian dist
-			# particles_scores = np.array(particles_scores)
-			# # missing np.sqrt() is intentional as NaN
-			# particles_scores = 1. / (2. * np.pi * DIST_SIGMA) * np.exp(-particles_scores/(2.*DIST_SIGMA**2))
-			# # particles_scores = 1. / (np.sqrt(2. * np.pi) * DIST_SIGMA) * np.exp(-particles_scores**2/(2.*DIST_SIGMA**2))
-			# particles_scores = particles_scores/np.sum(particles_scores)
+			# convert to Gaussian dist
+			particles_scores = np.array(particles_scores)
+			# missing np.sqrt() is intentional as NaN
+			particles_scores = 1. / (2. * np.pi * DIST_SIGMA) * np.exp(-particles_scores/(2.*DIST_SIGMA**2))
+			# particles_scores = 1. / (np.sqrt(2. * np.pi) * DIST_SIGMA) * np.exp(-particles_scores**2/(2.*DIST_SIGMA**2))
+			particles_scores = particles_scores/np.sum(particles_scores)
 
-			# # resample
-			# new_pxy_idx = np.random.choice(range(NUM_PARTICLES), size=NUM_PARTICLES-1, p=particles_scores, replace=True)
-			# best_idx = np.where(particles_scores == np.max(particles_scores))[0][0]
-			# best_xy = particles_xy[best_idx]
-			# new_set = particles_xy[new_pxy_idx]
-			# particles_xy = np.vstack((best_xy, new_set))
+			# resample
+			new_pxy_idx = np.random.choice(range(NUM_PARTICLES), size=NUM_PARTICLES-1, p=particles_scores, replace=True)
+			best_idx = np.where(particles_scores == np.max(particles_scores))[0][0]
+			best_xy = particles_xy[best_idx]
+			new_set = particles_xy[new_pxy_idx]
+			particles_xy = np.vstack((best_xy, new_set))
 
-			kp_frame, des_frame = sift.detectAndCompute(img, None)	
+			# kp_frame, des_frame = sift.detectAndCompute(img, None)	
 
-			# Getting nearest matches using FLANN library
-			matches = flann.knnMatch(des_roi, des_frame, k=2)
+			# # Getting nearest matches using FLANN library
+			# matches = flann.knnMatch(des_roi, des_frame, k=2)
 
-			good = []
-			# Outlier Filtering by nearest neighbour distance ratio
-			if len(matches) > 1:
-				for m,n in matches:
-					if m.distance < 0.7*n.distance:
-						good.append(m)
-			# print(len(good))
+			# good = []
+			# # Outlier Filtering by nearest neighbour distance ratio
+			# if len(matches) > 1:
+			# 	for m,n in matches:
+			# 		if m.distance < 0.7*n.distance:
+			# 			good.append(m)
+			# # print(len(good))
 
-			#On getting enough good matches
-			if len(good) >= MIN_MATCH_COUNT:
-				#Getting matched keypoint's location in ROI
-				src_pts = np.float32([ kp_roi[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
+			# #On getting enough good matches
+			# if len(good) >= MIN_MATCH_COUNT:
+			# 	#Getting matched keypoint's location in ROI
+			# 	src_pts = np.float32([ kp_roi[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
 
-				#Getting matched keypoint's location in current frame
-				dst_pts = np.float32([ kp_frame[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
+			# 	#Getting matched keypoint's location in current frame
+			# 	dst_pts = np.float32([ kp_frame[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
 
-				# find mapping matrix from src to dst
-				M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+			# 	# find mapping matrix from src to dst
+			# 	M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
 				
-				# Getting perspective transform
-				dst = cv2.perspectiveTransform(pts, M) # [4, 1, 2]
+			# 	# Getting perspective transform
+			# 	dst = cv2.perspectiveTransform(pts, M) # [4, 1, 2]
 
-				# Drawing rotating rectangle around object
-				cv2.polylines(img_color, [np.int32(dst)], True, (255,255,255), 3, cv2.LINE_AA)
+			# 	# Drawing rotating rectangle around object
+			# 	cv2.polylines(img_color, [np.int32(dst)], True, (255,255,255), 3, cv2.LINE_AA)
 
-				# display best_xy/ mark target
-				best_xy = np.mean(dst, axis=0).astype(np.int32)[0]
-				print(best_xy)
-				img_color = mark_target(img_color, best_xy, RED, 1)
+			# 	# display best_xy/ mark target
+			# 	best_xy = np.mean(dst, axis=0).astype(np.int32)[0]
+			# 	print(best_xy)
+			# 	img_color = mark_target(img_color, best_xy, RED, 1)
 			
-			else:
-				print("Not enough matches are found - %d/%d" % (len(good),MIN_MATCH_COUNT))
+			# else:
+			# 	print("Not enough matches are found - %d/%d" % (len(good),MIN_MATCH_COUNT))
 
 
-			# # display best_xy/ mark target
-			# img_color = mark_target(img_color, best_xy, RED, 1)
+			# display best_xy/ mark target
+			img_color = mark_target(img_color, best_xy, RED, 1)
 
 			# update model patch
-			# img_patch = particles_patches[best_idx]
+			img_patch = particles_patches[best_idx]
 			# xleft, xright, yleft, yright = 0, 0, 0, 0
 			# xleft = int(np.min(dst[..., 0]))
 			# xright = int(np.max(dst[..., 0]))
